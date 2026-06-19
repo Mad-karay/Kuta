@@ -12,7 +12,7 @@
 
 #define ENGINE_SRC  "engine/src"
 #define OBJ_DIR     "build/obj"
-#define BIN_DIR     "bin"
+#define BIN_DIR     "build/bin"
 #define TARGET      BIN_DIR "/engine"
 
 #define EXT         "external"
