@@ -1,0 +1,17 @@
+.cache/
+
+build/
+
+vcpkg/
+
+*.dll
+*.so
+*.lib
+*.a
+*.exe
+*.spv
+
+compile_commands.json
+engine_roadmap.md
+arenaGuide.md
+nob
