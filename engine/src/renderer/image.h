@@ -9,3 +9,5 @@ typedef struct {
     VkFormat      format;
     VkExtent3D    extent;
 } AllocatedImage;
+
+void transition_image(VkCommandBuffer cmd, VkImage image, VkImageLayout current_layout, VkImageLayout new_layout);

@@ -10,6 +10,7 @@ vcpkg/
 *.a
 *.exe
 *.spv
+vgcore.*
 
 compile_commands.json
 engine_roadmap.md
