@@ -10,6 +10,7 @@
 #include "util/log.h"
 #include "util/arena.h"
 #include "device.h"
+#include "vk_mem_alloc.h"
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
@@ -187,9 +188,9 @@ bool init_vulkan_context(Arena *a, DeviceCtx *ctx, SDL_Window *window, char* eng
   ctx->graphics_family = UINT32_MAX;
   uint32_t graph_fam_count;
 
-  vkGetPhysicalDeviceQueueFamilyProperties2(ctx->gpu, &graph_fam_count, NULL);
+  vkGetPhysicalDeviceQueueFamilyProperties(ctx->gpu, &graph_fam_count, NULL);
 
-  VkQueueFamilyProperties *graph_fam_props = arena_alloc(a, sizeof(VkQueueFamilyProperties2) * graph_fam_count);
+  VkQueueFamilyProperties *graph_fam_props = arena_alloc(a, sizeof(VkQueueFamilyProperties) * graph_fam_count);
 
   if (graph_fam_props == NULL) {
     LOG_E("Error: Failed to allocate memmory for queue families");
@@ -218,13 +219,13 @@ bool init_vulkan_context(Arena *a, DeviceCtx *ctx, SDL_Window *window, char* eng
   VkPhysicalDeviceVulkan13Features features13 = {
     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
     .synchronization2 = VK_TRUE,
-    .dynamicRendering = VK_TRUE, // you'll need this too if following vkguide's dynamic rendering path
+    .dynamicRendering = VK_TRUE,
   };
 
   VkPhysicalDeviceVulkan12Features features12 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
       .pNext = &features13,
-      .bufferDeviceAddress = VK_TRUE, // vkguide uses this later for mesh buffers
+      .bufferDeviceAddress = VK_TRUE,
       .descriptorIndexing = VK_TRUE,
   };
 
@@ -284,6 +285,15 @@ bool init_vulkan_context(Arena *a, DeviceCtx *ctx, SDL_Window *window, char* eng
     }
   }
  
+  /*VMA Allocator Init*/
+  VmaAllocatorCreateInfo allocator_info = {
+    .physicalDevice = ctx->gpu,
+    .device = ctx->device,
+    .instance = ctx->instance,
+    .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+  };
+
+  vmaCreateAllocator(&allocator_info, &ctx->vma);
 
   return false;
 }

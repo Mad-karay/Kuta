@@ -23,6 +23,9 @@
 #define STB_INC     EXT
 #define VMA_INC     EXT
 
+#define VMA_IMPL_SRC ENGINE_SRC "/vma_impl.cpp"
+#define VMA_IMPL_OBJ OBJ_DIR "/vma_impl.cpp.o"
+
 // ─── mkdir -p ─────────────────────────────────────────────────────────────────
 
 static bool mkdir_p(const char *path)
@@ -96,6 +99,21 @@ static bool compile_c(Nob_Cmd *cmd, const char *src, const char *obj)
     return nob_cmd_run_sync(*cmd);
 }
 
+static bool compile_cpp(Nob_Cmd *cmd, const char *src, const char *obj)
+{
+    if (!nob_needs_rebuild1(obj, src)) return true;
+    if (!mkdir_p(nob_temp_dir_name(obj))) return false;
+
+    nob_log(NOB_INFO, "CXX %s", src);
+
+    cmd->count = 0;
+    nob_cmd_append(cmd, "c++");
+    nob_cmd_append(cmd, "-std=c++17", "-g", "-O2");
+    nob_cmd_append(cmd, "-I"ENGINE_SRC, "-I"VMA_INC);
+    nob_cmd_append(cmd, "-c", src, "-o", obj);
+    return nob_cmd_run_sync(*cmd);
+}
+
 // ─── shaders ──────────────────────────────────────────────────────────────────
 
 static bool compile_shaders(Nob_Cmd *cmd)
@@ -137,6 +155,7 @@ static bool link_engine(Nob_Cmd *cmd, Nob_File_Paths *srcs)
     Nob_File_Paths objs = {0};
     for (size_t i = 0; i < srcs->count; i++)
         nob_da_append(&objs, src_to_obj(srcs->items[i]));
+    nob_da_append(&objs, VMA_IMPL_OBJ);
 
     int needed = nob_needs_rebuild(TARGET, objs.items, objs.count);
     if (needed < 0)  { nob_da_free(objs); return false; }
@@ -150,7 +169,7 @@ static bool link_engine(Nob_Cmd *cmd, Nob_File_Paths *srcs)
     cmd->count = 0;
     nob_cmd_append(cmd, "cc");
     nob_da_append_many(cmd, objs.items, objs.count);
-    nob_cmd_append(cmd, "-lSDL3", "-lvulkan", "-lm", "-o", TARGET);
+    nob_cmd_append(cmd, "-lSDL3", "-lvulkan", "-lm", "-lstdc++", "-o", TARGET);
 
     nob_da_free(objs);
     return nob_cmd_run_sync(*cmd);
@@ -222,6 +241,7 @@ int main(int argc, char **argv)
 
     for (size_t i = 0; i < srcs.count; i++)
         if (!compile_c(&cmd, srcs.items[i], src_to_obj(srcs.items[i]))) return 1;
+    if (!compile_cpp(&cmd, VMA_IMPL_SRC, VMA_IMPL_OBJ)) return 1;
 
     if (!write_compile_commands(&srcs)) return 1;
     if (!link_engine(&cmd, &srcs))     return 1;

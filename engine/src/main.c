@@ -10,14 +10,13 @@
 
 int main(){
     Arena a = {0};
-    KutaCtx ctx = {0};
-    uint64_t frame_number = 0;
+    KutaCtx *ctx = arena_alloc(&a, sizeof(KutaCtx));
     
-    init_engine(&a, &ctx, "Kuta", "Kudo", "Hello, Kuta", 800, 600, VK_API_VERSION_1_4);
+    init_engine(&a, ctx, "Kuta", "Kudo", "Hello, Kuta", 800, 600, VK_API_VERSION_1_4);
 
-    main_loop(&ctx, frame_number);
+    main_loop(ctx);
 
-    deinit_engine(&ctx);
+    deinit_engine(ctx);
     arena_free(&a);
     return 0;
 }

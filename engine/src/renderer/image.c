@@ -34,3 +34,44 @@ void transition_image(VkCommandBuffer cmd, VkImage image, VkImageLayout current_
 
   vkCmdPipelineBarrier2(cmd, &dep_info);
 }
+
+void copy_image_to_image(VkCommandBuffer cmd, VkImage source, VkImage destination, VkExtent2D src_size, VkExtent2D dst_size) {
+  VkImageBlit2 blit_region = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+    .pNext = NULL,
+    .srcOffsets = {
+      [0] = { .x = 0, .y = 0, .z = 0 },
+      [1] = { .x = (int32_t)src_size.width, .y = (int32_t)src_size.height, .z = 1 },
+    },
+    .dstOffsets = {
+      [0] = { .x = 0, .y = 0, .z = 0 },
+      [1] = { .x = (int32_t)dst_size.width, .y = (int32_t)dst_size.height, .z = 1 },
+    },
+    .srcSubresource = {
+      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+      .mipLevel = 0,
+      .baseArrayLayer = 0,
+      .layerCount = 1,
+    },
+    .dstSubresource = {
+      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+      .mipLevel = 0,
+      .baseArrayLayer = 0,
+      .layerCount = 1,
+    },
+  };
+
+  VkBlitImageInfo2 blit_info = {
+    .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+    .pNext = NULL,
+    .srcImage = source,
+    .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    .dstImage = destination,
+    .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    .filter = VK_FILTER_LINEAR,
+    .regionCount = 1,
+    .pRegions = &blit_region,
+  };
+
+  vkCmdBlitImage2(cmd, &blit_info);
+}

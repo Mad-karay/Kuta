@@ -5,6 +5,7 @@
 #include "SDL3/SDL_video.h"
 #include "core/window.h"
 #include "renderer/device.h"
+#include "renderer/image.h"
 #include "util/arena.h"
 #include "util/log.h"
 #include "renderer/swapchain.h"
@@ -18,7 +19,7 @@ uint32_t clamp(uint32_t value, uint32_t min, uint32_t max) {
   return value;
 }
 
-bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx) {
+bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx, AllocatedImage *draw_image) {
   /*Query the surface capabilities for the current physical device and surface*/
   VkSurfaceCapabilitiesKHR capabilities; 
   VkResult capa_res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev_ctx->gpu, dev_ctx->surface, &capabilities);
@@ -179,6 +180,7 @@ bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, Win
     }
   }
 
+  /*Create a swapchain Semaphore for each swapchain image*/
   swp_ctx->render_semaphores = arena_alloc(a, sizeof(VkSemaphore) * swp_ctx->image_count);
   VkSemaphoreCreateInfo sem_info = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
   for (uint32_t i = 0; i < swp_ctx->image_count; i++) {
@@ -189,6 +191,62 @@ bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, Win
       }
   }
 
+  /*Init Allocated image*/
+  VkExtent3D draw_image_extent = {
+    .width = swp_ctx->extent.width,
+    .height = swp_ctx->extent.height,
+    .depth = 1,
+  };
+
+  draw_image->format = VK_FORMAT_R16G16B16A16_SFLOAT;
+  draw_image->extent = draw_image_extent;
+
+  VkImageUsageFlags draw_image_usages = {};
+  draw_image_usages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+	draw_image_usages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	draw_image_usages |= VK_IMAGE_USAGE_STORAGE_BIT;
+	draw_image_usages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+  VkImageCreateInfo rimg_info = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+    .pNext = NULL,
+    .imageType = VK_IMAGE_TYPE_2D,
+    .format = draw_image->format,
+    .extent = draw_image_extent,
+    .mipLevels = 1,
+    .arrayLayers = 1,
+    .samples = VK_SAMPLE_COUNT_1_BIT,
+    .tiling = VK_IMAGE_TILING_OPTIMAL,
+    .usage = draw_image_usages,
+  };
+
+  VmaAllocationCreateInfo rimg_allocinfo = {
+    .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+    .requiredFlags = (VkMemoryPropertyFlags)VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+  };
+  vmaCreateImage(dev_ctx->vma, &rimg_info, &rimg_allocinfo, &draw_image->handle, &draw_image->alloc, NULL);
+
+  VkImageViewCreateInfo rview_info = {
+    .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+    .pNext = NULL,
+    .viewType = VK_IMAGE_VIEW_TYPE_2D,
+    .image = draw_image->handle,
+    .format = draw_image->format,
+    .subresourceRange.baseMipLevel = 0,
+    .subresourceRange.levelCount = 1,
+    .subresourceRange.baseArrayLayer = 0,
+    .subresourceRange.layerCount = 1,
+    .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+  };
+
+  VkResult rview_res = vkCreateImageView(dev_ctx->device, &rview_info, NULL, &draw_image->view);
+  if(rview_res != VK_SUCCESS) {
+    LOG_E("Failed to create image view: %d", rview_res);
+    return true;
+  }
+
+  
+
   return false;
 }
 
@@ -197,6 +255,7 @@ void deinit_swapchain(DeviceCtx *dev_ctx, SwapchainCtx *swp_ctx) {
     for (uint32_t i = 0; i < swp_ctx->image_count; i++) {
       vkDestroySemaphore(dev_ctx->device, swp_ctx->render_semaphores[i], NULL);
       vkDestroyImageView(dev_ctx->device, swp_ctx->views[i], NULL);
+      swp_ctx->render_semaphores[i] = NULL;
     }
     swp_ctx->views = NULL;
     swp_ctx->images = NULL;

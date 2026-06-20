@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "renderer/device.h"
 #include "core/window.h"
+#include "renderer/image.h"
 #include "util/arena.h"
 
 typedef struct {
@@ -15,6 +16,5 @@ typedef struct {
     uint32_t        image_count;
 } SwapchainCtx;
 
-bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx);
-
+bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx, AllocatedImage *draw_image);
 void deinit_swapchain(DeviceCtx *dev_ctx, SwapchainCtx *swp_ctx);
