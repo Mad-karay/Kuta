@@ -1,8 +1,3 @@
-// Bootstrap (first time only):
-//   cc nob.c -o nob && ./nob
-// Every run after:
-//   ./nob
-
 #define NOB_IMPLEMENTATION
 #include "nob.h"
 #include <sys/stat.h>

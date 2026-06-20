@@ -1,4 +1,3 @@
-// Pipeline — graphics and compute pipeline builder helpers. #include <vulkan/vulkan.h> #include <stdbool.h>
 #include <vulkan/vulkan_core.h>
 #include "renderer/pipeline.h"
 #include "util/platform.h"

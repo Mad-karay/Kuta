@@ -1,4 +1,3 @@
-// Descriptors — descriptor pool, layout, and set allocation and updates.
 #include <vulkan/vulkan.h>
 #include <math.h>
 #include "renderer/descriptors.h"

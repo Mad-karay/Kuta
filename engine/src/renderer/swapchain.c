@@ -1,4 +1,3 @@
-// Swapchain — creation, recreation on resize, and image view management.
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>

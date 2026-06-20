@@ -2,7 +2,6 @@
 #include <vulkan/vulkan.h>
 #include "renderer/device.h"
 
-// Wraps a one-shot command buffer submission (useful for transfers and image transitions).
 typedef struct {
     VkCommandPool   pool;
     VkCommandBuffer cmd;
@@ -10,3 +9,8 @@ typedef struct {
 } ImmediateCtx;
 
 bool init_immediate_commands(DeviceCtx *dev_ctx, ImmediateCtx *imm);
+
+typedef void (*ImmediateSubmitFn)(VkCommandBuffer cmd, void *user_data);
+
+bool immediate_submit(DeviceCtx *dev_ctx, ImmediateCtx *imm, ImmediateSubmitFn fn, void *user_data);
+void deinit_immediate_commands(DeviceCtx *dev_ctx, ImmediateCtx *imm);

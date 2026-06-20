@@ -1,5 +1,3 @@
-// Device — Vulkan instance, physical device selection, logical device, surface, and VMA allocator.
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>

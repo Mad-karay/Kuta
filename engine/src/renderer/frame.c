@@ -1,4 +1,3 @@
-// Frame — per-frame-in-flight command pool, command buffer, and synchronization primitives.
 #include "renderer/frame.h"
 #include <stdint.h>
 #include <vulkan/vulkan.h>

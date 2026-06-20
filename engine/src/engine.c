@@ -85,11 +85,16 @@ bool init_engine(Arena *a, KutaCtx *ctx, char* engine_name, char* app_name, char
       LOG_E("Failed to init descriptors");
       return true;
     }
+    if(init_immediate_commands(&ctx->device_ctx, &ctx->immediate_ctx)) {
+      LOG_E("Failed to init immediate commands");
+      return true;
+    }
     return false;
 }
 
 void deinit_engine(KutaCtx *ctx) {
   vkDeviceWaitIdle(ctx->device_ctx.device);
+  deinit_immediate_commands(&ctx->device_ctx, &ctx->immediate_ctx);
   deinit_frame_commands(&ctx->device_ctx, ctx->frames, FRAMES_IN_FLIGHT);
   /*Destroy gpu resources in queue style*/
   vkDestroyImageView(ctx->device_ctx.device, ctx->draw_image.view, NULL);
