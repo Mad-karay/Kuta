@@ -7,4 +7,5 @@ typedef struct {
     float mouse_dx;
     float mouse_dy;
     bool  first_mouse;
+    bool resize_requested;
 } InputState;

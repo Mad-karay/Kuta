@@ -9,6 +9,7 @@ typedef struct {
     uint32_t    width;
     uint32_t    height;
     bool        should_close;
+    bool        resize_requested;
 } WindowCtx;
 
 bool init_window_context(WindowCtx *ctx, uint32_t width, uint32_t height, char* title);

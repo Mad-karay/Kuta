@@ -15,7 +15,7 @@ bool init_window_context(WindowCtx *ctx, uint32_t width, uint32_t height, char* 
         return true;
     }
 
-    SDL_Window *window = SDL_CreateWindow(title, width, height, SDL_WINDOW_VULKAN);
+    SDL_Window *window = SDL_CreateWindow(title, width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
     if (window == NULL) {
         LOG_E("Window could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_Quit();

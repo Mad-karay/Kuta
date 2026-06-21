@@ -4,5 +4,5 @@
 
 typedef struct {
     Pipeline      pipeline;
-    DescriptorCtx descriptors;
+    DescriptorAllocatorGrowable descriptors;
 } Material;

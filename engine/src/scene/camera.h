@@ -12,8 +12,6 @@ typedef struct {
     float sensitivity;
 } Camera;
 
-// GPU-side layout for the scene uniform buffer.
-// Uses vec4 throughout to avoid std140 alignment surprises.
 typedef struct {
     mat4 view;
     mat4 proj;

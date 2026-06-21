@@ -16,5 +16,10 @@ typedef struct {
     uint32_t        image_count;
 } SwapchainCtx;
 
-bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx, AllocatedImage *draw_image);
+bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx, AllocatedImage *draw_image, AllocatedImage *depth_image);
+
 void deinit_swapchain(DeviceCtx *dev_ctx, SwapchainCtx *swp_ctx);
+
+typedef struct KutaCtx KutaCtx;
+
+bool resize_swapchain(KutaCtx *ctx);
