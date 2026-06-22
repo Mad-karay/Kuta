@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "util/arena.h"
+#include "util_mod/arena.h"
 
 typedef struct {
     VkDescriptorSetLayoutBinding *items;

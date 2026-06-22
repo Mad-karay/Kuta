@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
-#include "renderer/device.h"
-#include "renderer/commands.h"
-#include "util/log.h"
+#include "renderer_mod/device.h"
+#include "renderer_mod/commands.h"
+#include "util_mod/log.h"
 
 bool init_immediate_commands(DeviceCtx *dev_ctx, ImmediateCtx *imm) {
   VkCommandPoolCreateInfo pool_info = {

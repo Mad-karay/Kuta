@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <stdbool.h>
 #include <vulkan/vulkan_core.h>
-#include "util/arena.h"
+#include "util_mod/arena.h"
 
 typedef struct {
     VkPipeline       handle;

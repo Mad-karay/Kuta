@@ -1,12 +1,12 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "scene/mesh.h"
-#include "renderer/buffer.h"
-#include "renderer/commands.h"
-#include "renderer/device.h"
-#include "util/arena.h"
-#include "util/log.h"
+#include "scene_mod/mesh.h"
+#include "renderer_mod/buffer.h"
+#include "renderer_mod/commands.h"
+#include "renderer_mod/device.h"
+#include "util_mod/arena.h"
+#include "util_mod/log.h"
 #define CGLTF_IMPLEMENTATION
 #include "cgltf.h"
 

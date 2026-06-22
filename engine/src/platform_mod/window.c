@@ -1,8 +1,8 @@
 // Window — SDL3 window creation, destruction, and event polling.
-#include "core/window.h"
+#include "platform_mod/window.h"
 #include "SDL3/SDL_video.h"
-#include "util/log.h"
-#include "util/arena.h"
+#include "util_mod/log.h"
+#include "util_mod/arena.h"
 #include <SDL3/SDL.h>
 #include <stdbool.h>
 #include <stdint.h>

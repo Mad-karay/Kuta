@@ -2,21 +2,23 @@
 #include <math.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
-#include "cglm/cglm.h"
+#include "SDL3/SDL_events.h"
+#include "SDL3/SDL_keycode.h"
 #include "cglm/types.h"
-#include "renderer/descriptors.h"
-#include "renderer/device.h"
-#include "renderer/frame.h"
-#include "renderer/swapchain.h"
-#include "core/window.h"
-#include "scene/mesh.h"
-#include "util/log.h"
-#include "util/arena.h"
-#include "renderer/image.h"
+#include "renderer_mod/descriptors.h"
+#include "renderer_mod/device.h"
+#include "renderer_mod/frame.h"
+#include "renderer_mod/swapchain.h"
+#include "platform_mod/window.h"
+#include "scene_mod/mesh.h"
+#include "util_mod/log.h"
+#include "renderer_mod/image.h"
 #include "engine.h"
 #include "vk_mem_alloc.h"
-#include "renderer/pipeline.h"
-#include "util/platform.h"
+#include "renderer_mod/pipeline.h"
+#include "util_mod/platform.h"
+#define ARENA_IMPLEMENTATION
+#include "util_mod/arena.h"
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
@@ -213,18 +215,22 @@ bool init_default_data(Arena *a, KutaCtx *ctx) {
   return false;
 }
 
-bool init_engine(Arena *a, KutaCtx *ctx, char* engine_name, char* app_name, char* window_title, uint32_t window_width, uint32_t window_height, uint32_t api_version) {
+bool init_engine(KutaCtx *ctx, char* engine_name, char* app_name, char* window_title, uint32_t window_width, uint32_t window_height, uint32_t api_version) {
+
+    ctx->perma_arena = (Arena){0};
+    ctx->swapchain_arena = (Arena){0};
+    ctx->frame_arena = (Arena){0};
 
     ctx->render_scale = 1.0f;
+
     if (init_window_context(&ctx->window_ctx, window_width, window_height, window_title)) {
       LOG_E("Failed to initialize window context");
       return true;
     }
-    if(init_vulkan_context(a, &ctx->device_ctx, ctx->window_ctx.handle, engine_name, app_name, api_version)){
+    if(init_vulkan_context(&ctx->perma_arena, &ctx->device_ctx, ctx->window_ctx.handle, engine_name, app_name, api_version)){
       LOG_E("Failed to initialize vulkan context structure");
       return true;
     }
-    ctx->swapchain_arena = (Arena){0};
     if(init_swapchain_ctx(&ctx->swapchain_arena, &ctx->swapchain_ctx, &ctx->device_ctx, &ctx->window_ctx, &ctx->draw_image, &ctx->depth_image)){
       LOG_E("Failed to create Swapchain");
       return true;
@@ -233,7 +239,7 @@ bool init_engine(Arena *a, KutaCtx *ctx, char* engine_name, char* app_name, char
       LOG_E("Failed to init frame commands");
       return true;
     }
-    if(init_descriptors(a, ctx)) {
+    if(init_descriptors(&ctx->perma_arena, ctx)) {
       LOG_E("Failed to init descriptors");
       return true;
     }
@@ -241,7 +247,7 @@ bool init_engine(Arena *a, KutaCtx *ctx, char* engine_name, char* app_name, char
       LOG_E("Failed to init descriptors");
       return true;
     }
-    if(init_mesh_pipeline(a, ctx)){
+    if(init_mesh_pipeline(&ctx->perma_arena, ctx)){
       LOG_E("Failed to init triangle pipeline");
       return true;
     }
@@ -249,7 +255,7 @@ bool init_engine(Arena *a, KutaCtx *ctx, char* engine_name, char* app_name, char
       LOG_E("Failed to init immediate commands");
       return true;
     }
-    if(init_default_data(a, ctx)) {
+    if(init_default_data(&ctx->perma_arena, ctx)) {
       LOG_E("Failed to init default mesh data");
       return true;
     }
@@ -295,26 +301,15 @@ void deinit_engine(KutaCtx *ctx) {
   deinit_swapchain(&ctx->device_ctx, &ctx->swapchain_ctx);
   arena_free(&ctx->swapchain_arena);
   deinit_vulkan_context(&ctx->device_ctx);
+  arena_free(&ctx->perma_arena);
   SDL_DestroyWindow(ctx->window_ctx.handle);
+  free(ctx);
   SDL_Quit();
 }
 
 
 
 void draw_background(KutaCtx *ctx, VkCommandBuffer cmd, uint64_t frame_number, uint32_t swapchain_img_idx) {
-  float flash = fabsf(sinf(frame_number / 120.0f));
-  VkClearColorValue clear_value = { .float32 = { 0.0f, 0.0f, flash, 1.0f } };
-
-  VkImageSubresourceRange clear_range = {
-    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-    .baseMipLevel = 0,
-    .levelCount = VK_REMAINING_MIP_LEVELS,
-    .baseArrayLayer = 0,
-    .layerCount = VK_REMAINING_ARRAY_LAYERS,
-  };
-
-  vkCmdClearColorImage(cmd, ctx->draw_image.handle, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &clear_range);
-
   vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->gradient_pipeline.handle);
 
   vkCmdBindDescriptorSets( cmd, VK_PIPELINE_BIND_POINT_COMPUTE, ctx->gradient_pipeline.layout, 0, 1, &ctx->draw_image_descriptors, 0, NULL);
@@ -550,10 +545,12 @@ bool draw(Arena *a, KutaCtx *ctx, uint64_t frame_number) {
   }
 
   frame_number++;
+  
+  arena_free(a);
   return false;
 }
 
-void main_loop(Arena *a, KutaCtx *ctx) {
+void main_loop(KutaCtx *ctx) {
   uint64_t frame_number = 0;
   bool running = true;
   SDL_Event event;
@@ -561,12 +558,25 @@ void main_loop(Arena *a, KutaCtx *ctx) {
     while (SDL_PollEvent(&event)) {
           if (event.type == SDL_EVENT_QUIT) {
               running = false;
+          }else if (event.type == SDL_EVENT_KEY_DOWN) {
+              if(event.key.key == SDLK_Q){
+                running = false;
+              }
           }
     }
     if (ctx->window_ctx.resize_requested) {
       resize_swapchain(ctx);
     }
-    draw(a, ctx, frame_number);
+    if(draw(&ctx->frame_arena, ctx, frame_number)) {
+      LOG_E("Draw Loop Failed");
+      return;
+    }
     frame_number++;
   }
+}
+
+
+KutaCtx* kuta_create() {
+  KutaCtx *ctx = calloc(1, sizeof(KutaCtx));
+  return ctx;
 }

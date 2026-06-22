@@ -2,13 +2,13 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 #include "SDL3/SDL_video.h"
-#include "core/window.h"
-#include "renderer/device.h"
-#include "renderer/image.h"
-#include "util/arena.h"
-#include "util/log.h"
+#include "platform_mod/window.h"
+#include "renderer_mod/device.h"
+#include "renderer_mod/image.h"
+#include "util_mod/arena.h"
+#include "util_mod/log.h"
 #include "engine.h"
-#include "renderer/swapchain.h"
+#include "renderer_mod/swapchain.h"
 
 uint32_t clamp(uint32_t value, uint32_t min, uint32_t max) {
  if (value < min) {

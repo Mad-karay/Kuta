@@ -1,10 +1,10 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <stdint.h>
-#include "renderer/device.h"
-#include "core/window.h"
-#include "renderer/image.h"
-#include "util/arena.h"
+#include "renderer_mod/device.h"
+#include "platform_mod/window.h"
+#include "renderer_mod/image.h"
+#include "util_mod/arena.h"
 
 typedef struct {
     VkSwapchainKHR  handle;

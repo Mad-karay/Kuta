@@ -1,8 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "renderer/device.h"
-#include "renderer/buffer.h"
-#include "renderer/descriptors.h"
+#include "renderer_mod/device.h"
+#include "renderer_mod/buffer.h"
+#include "renderer_mod/descriptors.h"
 
 #define FRAMES_IN_FLIGHT 2
 

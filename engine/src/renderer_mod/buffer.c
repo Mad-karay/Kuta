@@ -2,8 +2,8 @@
 #include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
 #include <stdbool.h>
-#include "renderer/buffer.h"
-#include "util/log.h"
+#include "renderer_mod/buffer.h"
+#include "util_mod/log.h"
 
 bool create_buffer(VmaAllocator *allocator, size_t alloc_size, VkBufferUsageFlags usage, VmaMemoryUsage memory_usage, AllocatedBuffer *out_buffer) {
   VkBufferCreateInfo buffer_info = {

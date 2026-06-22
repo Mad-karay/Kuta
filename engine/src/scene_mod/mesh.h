@@ -1,9 +1,9 @@
 #pragma once
-#include "renderer/buffer.h"
+#include "renderer_mod/buffer.h"
 #include <stdint.h>
-#include "renderer/commands.h"
-#include "util/str.h"
-#include "renderer/device.h"
+#include "renderer_mod/commands.h"
+#include "util_mod/str.h"
+#include "renderer_mod/device.h"
 #include "cglm/cglm.h"
 
 typedef struct {

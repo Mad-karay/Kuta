@@ -2,8 +2,8 @@
 #include <vulkan/vulkan.h>
 #include <stdbool.h>
 #include <vk_mem_alloc.h>
-#include "renderer/device.h"
-#include "renderer/commands.h"
+#include "renderer_mod/device.h"
+#include "renderer_mod/commands.h"
 
 typedef struct {
     VkImage       handle;

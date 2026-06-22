@@ -1,8 +1,8 @@
 #include <vulkan/vulkan.h>
 #include <math.h>
 #include <string.h>
-#include "renderer/descriptors.h"
-#include "util/log.h"
+#include "renderer_mod/descriptors.h"
+#include "util_mod/log.h"
 
 void descriptor_layout_builder_add_binding(Arena *a, DescriptorLayoutBuilder *builder, uint32_t binding, VkDescriptorType type) {
   VkDescriptorSetLayoutBinding new_bind = {

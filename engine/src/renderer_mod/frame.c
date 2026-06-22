@@ -1,11 +1,10 @@
-#include "renderer/frame.h"
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
-#include "renderer/device.h"
-#include "util/arena.h"
-#include "util/log.h"
-#include "renderer/frame.h"
+#include "renderer_mod/device.h"
+#include "util_mod/arena.h"
+#include "util_mod/log.h"
+#include "renderer_mod/frame.h"
 
 
 bool init_frame_commands(DeviceCtx *dev_ctx, FrameCtx *frames, uint32_t frame_count) {

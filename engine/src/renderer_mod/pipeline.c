@@ -1,7 +1,7 @@
 #include <vulkan/vulkan_core.h>
-#include "renderer/pipeline.h"
-#include "util/platform.h"
-#include "util/log.h"
+#include "renderer_mod/pipeline.h"
+#include "util_mod/platform.h"
+#include "util_mod/log.h"
 
 
 bool init_pipelines(VkDevice dev, VkDescriptorSetLayout *draw_image_descriptor_layout, Pipeline *gradient_pipeline) {

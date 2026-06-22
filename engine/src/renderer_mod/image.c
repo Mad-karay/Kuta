@@ -2,10 +2,10 @@
 #include <vulkan/vulkan_core.h>
 #include <math.h>
 #include <stdbool.h>
-#include "renderer/image.h"
-#include "renderer/buffer.h"
-#include "renderer/commands.h"
-#include "util/log.h"
+#include "renderer_mod/image.h"
+#include "renderer_mod/buffer.h"
+#include "renderer_mod/commands.h"
+#include "util_mod/log.h"
 #include <string.h>
 
 typedef struct {

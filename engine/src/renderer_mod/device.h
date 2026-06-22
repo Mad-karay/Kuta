@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "SDL3/SDL.h"
-#include "util/arena.h"
+#include "util_mod/arena.h"
 
 typedef struct {
     VkInstance               instance;
