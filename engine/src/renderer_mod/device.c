@@ -9,6 +9,7 @@
 #include "util_mod/arena.h"
 #include "renderer_mod/device.h"
 #include "vk_mem_alloc.h"
+#include "kuta/kuta_platform.h"
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
@@ -48,7 +49,7 @@ static VkPhysicalDevice pick_physical_device(VkPhysicalDevice *devices, uint32_t
     return fallback; 
 }
 
-bool init_vulkan_context(Arena *a, DeviceCtx *ctx, SDL_Window *window, char* engine_name, char* app_name, uint32_t api_version) {
+bool init_vulkan_context(Arena *a, DeviceCtx *ctx, KtPlatform *pl, const char* engine_name, const char* app_name, uint32_t api_version) {
   /*INSTANCE CREATION*/
   uint32_t required_extensions_count;
   char const * const * required_extensions = SDL_Vulkan_GetInstanceExtensions(&required_extensions_count);
@@ -177,8 +178,8 @@ bool init_vulkan_context(Arena *a, DeviceCtx *ctx, SDL_Window *window, char* eng
   LOG_I("Selected physical Device: %s", props.deviceName);
 
   /*Create Surface*/
-  if(!SDL_Vulkan_CreateSurface(window, ctx->instance, NULL, &ctx->surface)) {
-    LOG_E("Failed to create surface %s", SDL_GetError());
+  ctx->surface = pl->create_surface(pl, ctx->instance);
+  if(!ctx->surface) {
     return true;
   }
 

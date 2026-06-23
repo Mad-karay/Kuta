@@ -4,8 +4,8 @@
 #include <vk_mem_alloc.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "SDL3/SDL.h"
 #include "util_mod/arena.h"
+#include "kuta/kuta_platform.h"
 
 typedef struct {
     VkInstance               instance;
@@ -18,5 +18,5 @@ typedef struct {
     VmaAllocator             vma;
 } DeviceCtx;
 
-bool init_vulkan_context(Arena *a, DeviceCtx *ctx, SDL_Window *window, char* engine_name, char* app_name, uint32_t api_version);
+bool init_vulkan_context(Arena *a, DeviceCtx *ctx, KtPlatform *pl, const char* engine_name, const char* app_name, uint32_t api_version);
 void deinit_vulkan_context(DeviceCtx *ctx);

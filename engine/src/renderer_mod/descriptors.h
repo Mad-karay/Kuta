@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "kuta/kuta.h"
 #include "util_mod/arena.h"
 
 typedef struct {

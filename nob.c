@@ -6,10 +6,10 @@
 
 
 #define ENGINE_SRC   "engine/src"
+#define ENGINE_INC   "engine/include"
 #define EXAMPLES_DIR "examples"
 #define OBJ_DIR      "build/obj"
 #define BIN_DIR      "build/bin"
-#define ENGINE_INC "engine/include"
 
 #define ENGINE_LIB   BIN_DIR "/libkuta.so"
 #define EDITOR_OUT   BIN_DIR "/kuta_editor"
@@ -77,7 +77,6 @@ static const char *src_to_obj(const char *src)
     return nob_temp_sprintf(OBJ_DIR "/%s.o", src);
 }
 
-
 static bool compile_c(Nob_Cmd *cmd, const char *src, const char *obj)
 {
     if (!nob_needs_rebuild1(obj, src)) return true;
@@ -106,7 +105,7 @@ static bool compile_cpp(Nob_Cmd *cmd, const char *src, const char *obj)
     nob_cmd_append(cmd, "c++");
     nob_cmd_append(cmd, "-std=c++17", "-g", "-O2");
     nob_cmd_append(cmd, "-fPIC");
-    nob_cmd_append(cmd, "-I"ENGINE_SRC, "-I"VMA_INC);
+    nob_cmd_append(cmd, "-I"ENGINE_SRC, "-I"ENGINE_INC, "-I"VMA_INC);
     nob_cmd_append(cmd, "-c", src, "-o", obj);
     return nob_cmd_run_sync(*cmd);
 }
@@ -152,22 +151,19 @@ static bool build_engine_library(Nob_Cmd *cmd, Nob_File_Paths *library_srcs)
 
     int needed = nob_needs_rebuild(ENGINE_LIB, objs.items, objs.count);
     if (needed < 0)  { nob_da_free(objs); return false; }
-    if (needed == 0) {
-        nob_da_free(objs);
-        return true;
-    }
+    if (needed == 0) { nob_da_free(objs); return true; }
 
-    nob_log(NOB_INFO, "AR   %s", ENGINE_LIB);
+    nob_log(NOB_INFO, "LD   %s", ENGINE_LIB);
     cmd->count = 0;
     nob_cmd_append(cmd, "cc", "-shared", "-fPIC", "-o", ENGINE_LIB);
     nob_da_append_many(cmd, objs.items, objs.count);
+    // libkuta.so carries all its own deps — users only link -lkuta
     nob_cmd_append(cmd, "-lSDL3", "-lvulkan", "-lm", "-lstdc++");
 
     bool success = nob_cmd_run_sync(*cmd);
     nob_da_free(objs);
     return success;
 }
-
 
 static bool build_and_link_executable(Nob_Cmd *cmd, const char *src_path, const char *out_binary_path)
 {
@@ -176,49 +172,52 @@ static bool build_and_link_executable(Nob_Cmd *cmd, const char *src_path, const 
 
     const char *deps[] = { obj_path, ENGINE_LIB };
     int needs_lnk = nob_needs_rebuild(out_binary_path, deps, 2);
-
-    if (needs_lnk > 0) {
-        nob_log(NOB_INFO, "LD   %s", out_binary_path);
-        cmd->count = 0;
-        nob_cmd_append(cmd, "cc", obj_path, "-L" BIN_DIR, "-lkuta", "-Wl,-rpath," BIN_DIR, "-lSDL3",
-              "-lvulkan",
-              "-lm",
-              "-lstdc++",
-              "-o",
-              out_binary_path);
-
-        nob_cmd_append(cmd, "-L"BIN_DIR, "-lkuta");
-        nob_cmd_append(cmd, "-Wl,-rpath," BIN_DIR);
-        return nob_cmd_run_sync(*cmd);
+    if (needs_lnk < 0) return false;
+    if (needs_lnk == 0) {
+        nob_log(NOB_INFO, "%s is up to date", out_binary_path);
+        return true;
     }
-    
-    nob_log(NOB_INFO, "%s is up to date", out_binary_path);
-    return true;
+
+    nob_log(NOB_INFO, "LD   %s", out_binary_path);
+    cmd->count = 0;
+    nob_cmd_append(cmd, "cc");
+    nob_cmd_append(cmd, obj_path);
+    nob_cmd_append(cmd, "-L"BIN_DIR, "-lkuta");
+    nob_cmd_append(cmd, "-Wl,-rpath," BIN_DIR);
+    nob_cmd_append(cmd, "-o", out_binary_path);
+    return nob_cmd_run_sync(*cmd);
 }
 
-
-static bool write_compile_commands(Nob_File_Paths *engine_srcs)
+static bool write_compile_commands(Nob_File_Paths *srcs)
 {
     FILE *f = fopen("compile_commands.json", "w");
     if (!f) return false;
 
     char cwd[4096];
-    if (!getcwd(cwd, sizeof(cwd))) {
-        fclose(f);
-        return false;
-    }
+    if (!getcwd(cwd, sizeof(cwd))) { fclose(f); return false; }
 
     const char *flags =
-        "cc -std=c11 -g -O2 -Wall -Wextra -Wno-unused-parameter"
-        " -I"ENGINE_SRC " -I"ENGINE_INC " -I"CGLM_INC " -I"CGLTF_INC
-        " -I"MICROUI_INC " -I"SDL_INC " -I"STB_INC " -I"VMA_INC;
+        "cc -std=c11 -g -O2 -Wall -Wextra -Wno-unused-parameter -fPIC"
+        " -I"ENGINE_SRC
+        " -I"ENGINE_INC
+        " -I"CGLM_INC
+        " -I"CGLTF_INC
+        " -I"MICROUI_INC
+        " -I"SDL_INC
+        " -I"STB_INC
+        " -I"VMA_INC;
 
     fprintf(f, "[\n");
-    for (size_t i = 0; i < engine_srcs->count; i++) {
-        const char *src = engine_srcs->items[i];
-        const char *comma = (i + 1 < engine_srcs->count) ? "," : "";
-        fprintf(f, "  {\n    \"directory\": \"%s\",\n    \"command\":   \"%s -c %s -o %s\",\n    \"file\":      \"%s\"\n  }%s\n",
-                cwd, flags, src, src_to_obj(src), src, comma);
+    for (size_t i = 0; i < srcs->count; i++) {
+        const char *src   = srcs->items[i];
+        const char *comma = (i + 1 < srcs->count) ? "," : "";
+        fprintf(f,
+            "  {\n"
+            "    \"directory\": \"%s\",\n"
+            "    \"command\":   \"%s -c %s -o %s\",\n"
+            "    \"file\":      \"%s\"\n"
+            "  }%s\n",
+            cwd, flags, src, src_to_obj(src), src, comma);
     }
     fprintf(f, "]\n");
     fclose(f);
@@ -241,11 +240,9 @@ int main(int argc, char **argv)
     nob_log(NOB_INFO, "=== Stage 1: Shaders ===");
     if (!compile_shaders(&cmd)) return 1;
 
-    nob_log(NOB_INFO, "=== Stage 2: Engine Core Framework ===");
+    nob_log(NOB_INFO, "=== Stage 2: Engine Library ===");
     Nob_File_Paths engine_srcs = {0};
     if (!collect_c_files(ENGINE_SRC, &engine_srcs)) return 1;
-    Nob_File_Paths include_srcs = {0};
-    if (!collect_c_files(ENGINE_INC, &include_srcs)) return 1;
 
     for (size_t i = 0; i < engine_srcs.count; i++) {
         if (!compile_c(&cmd, engine_srcs.items[i], src_to_obj(engine_srcs.items[i]))) return 1;
@@ -253,36 +250,45 @@ int main(int argc, char **argv)
     if (!compile_cpp(&cmd, VMA_IMPL_SRC, VMA_IMPL_OBJ)) return 1;
     if (!build_engine_library(&cmd, &engine_srcs)) return 1;
 
-    nob_log(NOB_INFO, "=== Stage 3: Examples Architecture ===");
-    
+    nob_log(NOB_INFO, "=== Stage 3: Examples ===");
+
+    Nob_File_Paths example_srcs = {0};
+    if (!collect_c_files(EXAMPLES_DIR, &example_srcs)) return 1;
+
     if (selected_example) {
         const char *src_path = nob_temp_sprintf("%s/%s.c", EXAMPLES_DIR, selected_example);
-        const char *bin_path = nob_temp_sprintf("%s/%s", BIN_DIR, selected_example);
+        const char *bin_path = nob_temp_sprintf("%s/%s",   BIN_DIR,      selected_example);
 
         if (!nob_file_exists(src_path)) {
-            nob_log(NOB_ERROR, "Target example file source '%s' could not be resolved.", src_path);
+            nob_log(NOB_ERROR, "Example '%s' not found at %s", selected_example, src_path);
             nob_da_free(engine_srcs);
+            nob_da_free(example_srcs);
             return 1;
         }
 
         if (!build_and_link_executable(&cmd, src_path, bin_path)) return 1;
 
-        nob_log(NOB_INFO, "=== Launching Run Target: %s ===", bin_path);
+        nob_log(NOB_INFO, "=== Run: %s ===", bin_path);
         cmd.count = 0;
         nob_cmd_append(&cmd, bin_path);
         if (!nob_cmd_run_sync(cmd)) return 1;
-
-    } 
+    }
 
     const char *editor_main_src = "editor/src/main.c";
     if (nob_file_exists(editor_main_src)) {
-        nob_log(NOB_INFO, "=== Stage 4: Modular Level Editor ===");
+        nob_log(NOB_INFO, "=== Stage 4: Editor ===");
         if (!build_and_link_executable(&cmd, editor_main_src, EDITOR_OUT)) return 1;
     }
 
-    if (!write_compile_commands(&engine_srcs)) return 1;
-    if (!write_compile_commands(&include_srcs)) return 1;
+    Nob_File_Paths all_srcs = {0};
+    nob_da_append_many(&all_srcs, engine_srcs.items,  engine_srcs.count);
+    nob_da_append_many(&all_srcs, example_srcs.items, example_srcs.count);
+
+    if (!write_compile_commands(&all_srcs)) return 1;
+    nob_log(NOB_INFO, "compile_commands.json written (%zu entries)", all_srcs.count);
 
     nob_da_free(engine_srcs);
+    nob_da_free(example_srcs);
+    nob_da_free(all_srcs);
     return 0;
 }

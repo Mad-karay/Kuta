@@ -2,7 +2,6 @@
 #include <vulkan/vulkan.h>
 #include <stdint.h>
 #include "renderer_mod/device.h"
-#include "platform_mod/window.h"
 #include "renderer_mod/image.h"
 #include "util_mod/arena.h"
 
@@ -16,10 +15,10 @@ typedef struct {
     uint32_t        image_count;
 } SwapchainCtx;
 
-bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx, AllocatedImage *draw_image, AllocatedImage *depth_image);
+typedef struct VkRendererCtx VkRendererCtx;
+
+bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, KtPlatform *pl, AllocatedImage *draw_image, AllocatedImage *depth_image);
 
 void deinit_swapchain(DeviceCtx *dev_ctx, SwapchainCtx *swp_ctx);
 
-typedef struct KutaCtx KutaCtx;
-
-bool resize_swapchain(KutaCtx *ctx);
+bool resize_swapchain(VkRendererCtx *ctx);

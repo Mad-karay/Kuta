@@ -1,5 +1,4 @@
 #include <vulkan/vulkan.h>
-#include <math.h>
 #include <string.h>
 #include "renderer_mod/descriptors.h"
 #include "util_mod/log.h"
@@ -245,3 +244,4 @@ void descriptor_writer_update_set(DescriptorWriter *writer, VkDevice device, VkD
   }
   vkUpdateDescriptorSets(device, writer->write_count, writer->writes, 0, NULL);
 }
+

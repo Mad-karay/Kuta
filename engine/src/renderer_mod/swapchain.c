@@ -2,13 +2,15 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 #include "SDL3/SDL_video.h"
+#include "kuta/kuta.h"
+#include "kuta/kuta_platform.h"
 #include "platform_mod/window.h"
 #include "renderer_mod/device.h"
 #include "renderer_mod/image.h"
 #include "util_mod/arena.h"
 #include "util_mod/log.h"
-#include "engine.h"
 #include "renderer_mod/swapchain.h"
+#include "renderer_mod/kt_vulkan_renderer.h"
 
 uint32_t clamp(uint32_t value, uint32_t min, uint32_t max) {
  if (value < min) {
@@ -19,7 +21,7 @@ uint32_t clamp(uint32_t value, uint32_t min, uint32_t max) {
   return value;
 }
 
-bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, WindowCtx *win_ctx, AllocatedImage *draw_image, AllocatedImage *depth_image) {
+bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, KtPlatform *pl, AllocatedImage *draw_image, AllocatedImage *depth_image) {
   /*Query the surface capabilities for the current physical device and surface*/
   VkSurfaceCapabilitiesKHR capabilities; 
   VkResult capa_res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev_ctx->gpu, dev_ctx->surface, &capabilities);
@@ -96,7 +98,7 @@ bool init_swapchain_ctx(Arena *a, SwapchainCtx *swp_ctx, DeviceCtx *dev_ctx, Win
       extent = capabilities.currentExtent;
   } else {
     int w, h;
-    SDL_GetWindowSizeInPixels(win_ctx->handle, &w, &h);
+    pl->get_window_size(pl, &w, &h);
     extent.width = clamp(w, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
     extent.height = clamp(h, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
   }
@@ -309,23 +311,20 @@ void deinit_swapchain(DeviceCtx *dev_ctx, SwapchainCtx *swp_ctx) {
   }
 }
 
-bool resize_swapchain(KutaCtx *ctx) {
-  vkDeviceWaitIdle(ctx->device_ctx.device);
+bool resize_swapchain(VkRendererCtx *ctx) {
+  vkDeviceWaitIdle(ctx->device.device);
 
-  deinit_swapchain(&ctx->device_ctx, &ctx->swapchain_ctx);
-  vkDestroyImageView(ctx->device_ctx.device, ctx->draw_image.view, NULL);
-  vmaDestroyImage(ctx->device_ctx.vma, ctx->draw_image.handle, ctx->draw_image.alloc);
-  vkDestroyImageView(ctx->device_ctx.device, ctx->depth_image.view, NULL);
-  vmaDestroyImage(ctx->device_ctx.vma, ctx->depth_image.handle, ctx->depth_image.alloc);
+  deinit_swapchain(&ctx->device, &ctx->swapchain);
+  vkDestroyImageView(ctx->device.device, ctx->draw_image.view, NULL);
+  vmaDestroyImage(ctx->device.vma, ctx->draw_image.handle, ctx->draw_image.alloc);
+  vkDestroyImageView(ctx->device.device, ctx->depth_image.view, NULL);
+  vmaDestroyImage(ctx->device.vma, ctx->depth_image.handle, ctx->depth_image.alloc);
 
-  int w, h;
-  SDL_GetWindowSize(ctx->window_ctx.handle, &w, &h);
-  ctx->window_ctx.width = w;
-  ctx->window_ctx.height = h;
-
+  int w, h; 
+  ctx->platform->get_window_size(ctx->platform, &w, &h);
   arena_reset(&ctx->swapchain_arena);
 
-  if (init_swapchain_ctx(&ctx->swapchain_arena, &ctx->swapchain_ctx, &ctx->device_ctx, &ctx->window_ctx, &ctx->draw_image, &ctx->depth_image)) {
+  if (init_swapchain_ctx(&ctx->swapchain_arena, &ctx->swapchain, &ctx->device, ctx->platform, &ctx->draw_image, &ctx->depth_image)) {
     LOG_E("Failed to recreate swapchain");
     return true;
   }

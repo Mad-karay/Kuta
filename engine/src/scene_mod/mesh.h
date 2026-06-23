@@ -26,19 +26,6 @@ typedef struct  {
     VkDeviceAddress vertex_buffer_address;
 } GPUMeshBuffers;
 
-typedef struct  {
-    mat4 world_matrix;
-    VkDeviceAddress vertex_buffer;
-} GPUDrawPushConstants;
-
-typedef struct {
-    mat4 view;
-    mat4 proj;
-    mat4 viewproj;
-    vec4 ambient_color;
-    vec4 sunlight_direction;
-    vec4 sunlight_color;
-} GPUSceneData;
 
 typedef struct {
     uint32_t start_index;
